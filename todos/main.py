@@ -1,34 +1,71 @@
-from fastapi import FastAPI, Body, Query, Path
+from fastapi import FastAPI
 import uvicorn
-from pydantic import BaseModel, Field
-from typing import Annotated
+from sqlmodel import SQLModel,Session, Field, create_engine,select
+
 
 app = FastAPI()
+connection_string = 'postgresql://postgres.mvywpktaqokwusajghbz:Jc.UDqZ!nLv7MN$@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
+connection = create_engine(connection_string)
 
-class Item(BaseModel):
-    id:int 
-    title:str
-    description : str
-
-class User(BaseModel):
-    userName:str = Field(max_length= 10)
+class Students(SQLModel, table = True):
+    id: int = Field(default=None, primary_key=True)
+    name: str
+    age: int
+    is_active: bool
     
-@app.get("/students/{id}")
-def MainRoute(id:Annotated[int, Path(le=5, ge =3)]):
-    return id   
+    
+SQLModel.metadata.create_all(connection)
 
 
-@app.post("/students")
-def MainRoute(item:Item, user:User, count:Annotated[int, Body()]):
-    print(user)
-    return item   
+@app.get("/getStudents")
+def getStudents():
+    with Session(connection) as session:
+        statement = select(Students).where(Students.id == 1)
+        results = session.exec(statement)
+        data = results.all()
+        print(data)
+        return data
 
-# @app.get("/students")
-# def MainRoute(item_sf:Annotated[str, Query(title="saf", description="Sf", alias="item-test",max_length=10, min_length=4, pattern="^fix[a-zA-Z0-9]")]):
-#     return item_sf   
+
 
 def start():
     uvicorn.run("todos.main:app",host="127.0.0.1", port=8080, reload=True)
+
+
+# select(Students) == select * from students;
+
+
+
+
+
+# from fastapi import FastAPI, Body, Query, Path
+# import uvicorn
+# from sqlmodel import Field, Session, SQLModel, create_engine, select # type: ignore
+
+# # SAME CODE AS ABOVE
+# app = FastAPI()
+# url = f'postgresql://postgres.mvywpktaqokwusajghbz:Jc.UDqZ!nLv7MN$@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
+# connection = create_engine(url)
+
+
+# class Hero(SQLModel, table=True):
+#     id: int | None = Field(default=None, primary_key=True)
+#     name: str
+#     secret_name: str
+#     age: int | None = None
+    
+# SQLModel.metadata.create_all(connection)
+
+    
+# @app.get("/heroes/")
+# def get_heroes():
+#     with Session(connection) as session:
+#         statement = select(Hero).where(Hero.age <= 35)
+#         results = session.exec(statement)
+#         return results.all()
+            
+# def start():
+#     uvicorn.run("todos.main:app",host="127.0.0.1", port=8080, reload=True)
 
 
 
